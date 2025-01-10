@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'workday_screen.dart';
+import 'package:timecontrol/service_locator.dart';
+import 'feature/login/presentation/login_screen.dart';
+import 'feature/workday/presentation/workday_screen.dart';
 
 void main() {
+  setupServiceLocator();
   runApp(MyApp());
 }
 
