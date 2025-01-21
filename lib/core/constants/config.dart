@@ -11,7 +11,7 @@ class Config {
   static const domain = "buygest.kuuvoo.com";
   static var version = "pre/dani_d1";
   static var url = "https://${Config.domain}/${Config.version}/yuubbbshop/data_fichar";
-  static var environment = "pro";
+  static var environment = "pre";
   static var urlVersion = "https://yuubbb.com/dev/version_avanzado.txt";
 
   static var userName = "";

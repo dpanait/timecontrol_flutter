@@ -181,6 +181,12 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
           ),
           actions:[
             IconButton(onPressed: () async{
+              _getTodayWork();
+              _getWorkday();
+            },
+            icon: Icon(Icons.refresh, color: Colors.white)),
+
+            IconButton(onPressed: () async{
               await clearUserData();
               await sl<LoginRepository>().logout();
 
@@ -607,6 +613,8 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
       result.fold(
         (exception) {
           _showLoadingDialog(context, exception.toString());
+          clearUserData();
+          Navigator.pushReplacementNamed(context, '/');
         },
         (workdayData) {
           if(mounted){
@@ -704,6 +712,8 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
         (exception) {
 
           _showLoadingDialog(context, exception.toString());
+          clearUserData();
+          Navigator.pushReplacementNamed(context, '/');
           
         },
         (workdayDayStatus) {
@@ -776,6 +786,16 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
               ],
             ),
           ),
+          actions: [
+            Row(children: [
+              FloatingActionButton(
+                onPressed: (){
+                  Navigator.pop(context, false);
+                },
+                child: Text("Cerrar")
+              )
+            ],)
+          ]
         );
       },
     );
@@ -806,22 +826,28 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
   
   void setStatusFromDb(WorkdayDayStatus workdayDayStatus) {
     bool btnFin = false;
-
+    //log("Setstatusfromdb: ${workdayDayStatus.toJson()}");
     if (workdayDayStatus.records.isEmpty) {
       // Si no hay registros, habilitamos "entrada" y deshabilitamos "salida"
       
       setState(() {
-        _isWorkdayStarted = true;
-        _isRunning = true;
+        if(workdayDayStatus.startWorkDay == 1){
+          _isWorkdayStarted = true;
+          _isRunning = true;
+        } else {
+          _isWorkdayStarted = false;
+          _isRunning = false;
+        }
       });
     } else {
       // Si hay registros, calculamos el tiempo
       final result = calculateTotalTime(workdayDayStatus.records);
+      //log("Result setStateFromDb: $result");
       final sumHr = result["hr"];
       final sumMin = result["min"];
       final sumSec = result["sec"];
       btnFin = result["btnFin"] == 1;
-      
+      //log("btnFin: $btnFin");
       setState(() {
         _timeElapsed = _formatDuration(Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!));
         _initialElapsedTime = Duration(hours: sumHr, minutes: sumMin, seconds: sumSec);
@@ -835,50 +861,60 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
         _startTimer();
 
       } else {
+        
          setState((){
-          _isWorkdayStarted = true;
+          if(workdayDayStatus.startWorkDay == 1){
+            _isWorkdayStarted = true;
+          } else {
+            _isWorkdayStarted = false;
+          }
+          //_isWorkdayStarted = false;
           _isRunning = false;
         });
+        if(!_isRunning){
+          _stopTimer();
+        }
       }
     }
 
     // Actualizar el estado del temporizador y la interfaz de usuario
-    if (workdayDayStatus.startWorkDay == 1) {
+    // if (workdayDayStatus.startWorkDay == 1) {
       
-      // Si hay registros, calculamos el tiempo
-      final result = calculateTotalTime(workdayDayStatus.records);
-      final sumHr = result["hr"];
-      final sumMin = result["min"];
-      final sumSec = result["sec"];
-      btnFin = result["btnFin"] == 1;
+    //   // Si hay registros, calculamos el tiempo
+    //   final result = calculateTotalTime(workdayDayStatus.records);
+    //   log("Result_2 setStateFromDb: $result");
+    //   final sumHr = result["hr"];
+    //   final sumMin = result["min"];
+    //   final sumSec = result["sec"];
+    //   btnFin = result["btnFin"] == 1;
       
-      setState(() {
-        _timeElapsed = _formatDuration(Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!));
-        _initialElapsedTime = Duration(hours: sumHr, minutes: sumMin, seconds: sumSec);
-      });
+    //   setState(() {
+    //     _timeElapsed = _formatDuration(Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!));
+    //     _initialElapsedTime = Duration(hours: sumHr, minutes: sumMin, seconds: sumSec);
+    //   });
 
-      if (btnFin) {
-        setState((){
-          _isWorkdayStarted = true;
-          _isRunning = true;
-        });
-        _startTimer();
+    //   if (btnFin) {
+    //     setState((){
+    //       _isWorkdayStarted = true;
+    //       _isRunning = true;
+    //     });
+    //     _startTimer();
 
-      } else {
-         setState((){
-          _isWorkdayStarted = true;
-          _isRunning = false;
-        });
-      }      
+    //   } else {
+    //      setState((){
+    //       _isWorkdayStarted = true;
+    //       _isRunning = false;
+    //     });
+    //   }      
 
-    } else {
-      setState(() {
-        _isWorkdayStarted = false;
-        _isRunning = false;
-        _timeElapsed = _formatDuration(Duration.zero);
-      });
+    // } else {
+    //   setState(() {
+    //     _isWorkdayStarted = false;
+    //     _isRunning = false;
+    //     _timeElapsed = _formatDuration(Duration.zero);
+    //   });
        
-    }
+    // }
   }
 
 }
