@@ -71,6 +71,7 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
     super.didChangeDependencies();
     // Ahora puedes acceder al contexto de forma segura
     final theme = Theme.of(context); // No genera error
+    //log("didChangeDependencies");
     if(mounted){
     _getTodayWork();
     }
@@ -102,6 +103,7 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
       _timer = Timer.periodic(Duration(seconds: 1), (timer) {
         setState(() {
           // Calcula el tiempo total transcurrido
+          // log("_startTimer: $_initialElapsedTime - ${_stopwatch.elapsed} - ${timer.tick}");
           _timeElapsed = _formatDuration(
             _initialElapsedTime + _stopwatch.elapsed,
           );
@@ -181,8 +183,8 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
           ),
           actions:[
             IconButton(onPressed: () async{
-              _getTodayWork();
               _getWorkday();
+              _getTodayWork();
             },
             icon: Icon(Icons.refresh, color: Colors.white)),
 
@@ -820,11 +822,40 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
       sumMin += duration.inMinutes % 60;
       sumSec += duration.inSeconds % 60;
     }
+    // Ajustar minutos y segundos a formato correcto
+    sumMin += sumSec ~/ 60;
+    sumSec %= 60;
+    sumHr += sumMin ~/ 60;
+    sumMin %= 60;
 
     return {"hr": sumHr, "min": sumMin, "sec": sumSec, "btnFin": btnFin ? 1 : 0};
   }
   
   void setStatusFromDb(WorkdayDayStatus workdayDayStatus) {
+    if (workdayDayStatus.records.isNotEmpty) {
+      final result = calculateTotalTime(workdayDayStatus.records);
+      //log("tiem calculate: $result");
+      final sumHr = result["hr"];
+      final sumMin = result["min"];
+      final sumSec = result["sec"];
+      setState(() {
+        _stopwatch.reset();
+        _initialElapsedTime = Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!);
+        _timeElapsed = _formatDuration(_initialElapsedTime); // Actualiza el tiempo mostrado
+      });
+      
+      if (result["btnFin"] == 1 && !_stopwatch.isRunning) {
+        _startTimer(); // Inicia el cronómetro si btnFin es 1 y no está corriendo
+      } else if (result["btnFin"] == 0){
+        _stopTimer();
+      }
+    } else {
+      _initialElapsedTime = Duration.zero;
+      _timeElapsed = '00:00:00';
+    }
+  }
+
+  void setStatusFromDb_bak(WorkdayDayStatus workdayDayStatus) {
     bool btnFin = false;
     //log("Setstatusfromdb: ${workdayDayStatus.toJson()}");
     if (workdayDayStatus.records.isEmpty) {
@@ -848,10 +879,12 @@ class _WorkdayScreenState extends State<WorkdayScreen> {
       final sumSec = result["sec"];
       btnFin = result["btnFin"] == 1;
       //log("btnFin: $btnFin");
+      //log("_timeElapsed 1: $_timeElapsed");
       setState(() {
-        _timeElapsed = _formatDuration(Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!));
-        _initialElapsedTime = Duration(hours: sumHr, minutes: sumMin, seconds: sumSec);
+        //_timeElapsed = _formatDuration(Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!));
+        _initialElapsedTime = Duration(hours: sumHr!, minutes: sumMin!, seconds: sumSec!);
       });
+      log("_timeElapsed 2: $_timeElapsed");
       
       if (btnFin) {
         setState((){
